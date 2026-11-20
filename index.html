@@ -393,5 +393,107 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
     a.download = title.replace(/\s+/g, '-').toLowerCase() + '.' + ext;
     a.click();
+async function renderClips() {
+  const container = document.getElementById('clipsContainer');
+  const metas = getClips();
+  if (metas.length === 0) { container.innerHTML = '<div class="empty">🎬 No clips yet. Create your first one!</div>'; return; }
+  container.innerHTML = '<div class="clipgrid">' + metas.map(m =>
+    `<div class="clipcard" data-id="${m.id}">
+      <video controls preload="metadata" data-clip-id="${m.id}"></video>
+      <div class="body">
+        <h3>${escapeHtml(m.title)}</h3>
+        <div class="meta">${m.duration.toFixed(1)}s · ${(m.size / 1024 / 1024).toFixed(1)} MB · <span class="tag">${m.aspect}</span></div>
+        <div class="actions">
+          <button class="btn ghost sm" onclick="downloadClip('${m.id}', '${escapeJs(m.title)}')">⬇ Download</button>
+          <button class="btn ghost sm" style="color:#f87171;" onclick="deleteClip('${m.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`
+  ).join('') + '</div>';
 
+  for (const m of metas) {
+    const blob = await getBlob(m.id);
+    if (blob) {
+      const vid = container.querySelector(`video[data-clip-id="${m.id}"]`);
+      if (vid) vid.src = URL.createObjectURL(blob);
+    }
+  }
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function escapeJs(s) { return String(s).replace(/'/g, "\\'"); }
+
+async function downloadClip(id, title) {
+  const blob = await getBlob(id);
+  if (!blob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+  a.download = title.replace(/\s+/g, '-').toLowerCase() + '.' + ext;
+  a.click();
+}
+
+async function deleteClip(id) {
+  if (!confirm('Delete this clip?')) return;
+  removeClipMeta(id);
+  await delBlob(id);
+  renderClips();
+  toast('🗑 Clip deleted');
+}
+
+const CAMPAIGNS = [
+  { title: 'Valorant Clutch Week', game: 'Valorant', reward: '$500', pool: '50,000 XP', entries: 128, ends: '3 days left' },
+  { title: 'CS2 Ace Moments', game: 'CS2', reward: '$300', pool: '25,000 XP', entries: 87, ends: '6 days left' },
+  { title: 'Fortnite Funny Builds', game: 'Fortnite', reward: '$200', pool: '18,000 XP', entries: 54, ends: '12 days left' },
+  { title: 'Apex Best Kills', game: 'Apex', reward: '$400', pool: '30,000 XP', entries: 96, ends: '8 days left' },
+  { title: 'Minecraft Best Build', game: 'Minecraft', reward: '$150', pool: '12,000 XP', entries: 41, ends: '10 days left' },
+  { title: 'GTA Stunt Clips', game: 'GTA V', reward: '$250', pool: '20,000 XP', entries: 68, ends: '5 days left' },
+];
+
+function renderCampaigns() {
+  document.getElementById('campaignGrid').innerHTML = CAMPAIGNS.map(c =>
+    `<div class="card campaign">
+      <span class="game">${c.game}</span>
+      <h3>${c.title}</h3>
+      <p style="margin-top:6px;">Top reward: <strong style="color:var(--neon);">${c.reward}</strong></p>
+      <div style="display:flex; justify-content:space-between; margin-top:14px; font-size:12px; color:var(--muted);">
+        <span>👥 ${c.entries} entries</span><span>💰 ${c.pool}</span>
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-top:6px;">⏳ ${c.ends}</div>
+      <button class="btn sm" style="margin-top:12px; width:100%;" onclick="toast('🏆 Joined! Submit your clip to enter.')">Join Campaign</button>
+    </div>`
+  ).join('');
+}
+
+const BOARD = [
+  { name: 'PixelSniper', xp: 12480, clips: 87 },
+  { name: 'NoScopeKing', xp: 11210, clips: 74 },
+  { name: 'ClutchGod', xp: 9870, clips: 62 },
+  { name: 'FragAddict', xp: 8120, clips: 51 },
+  { name: 'AceQueen', xp: 7410, clips: 44 },
+  { name: 'GlitchMaster', xp: 6890, clips: 39 },
+  { name: 'RushN00b', xp: 5420, clips: 31 },
+  { name: 'SneakyBeaky', xp: 4210, clips: 24 },
+];
+
+function renderLeaderboard() {
+  document.getElementById('leaderboardBox').innerHTML = BOARD.map((u, i) =>
+    `<div class="lb-row">
+      <div style="display:flex; align-items:center;">
+        <div class="lb-rank ${i < 3 ? 'top' : ''}">${i < 3 ? '🏅' : i + 1}</div>
+        <div class="lb-name">${u.name}</div>
+      </div>
+      <div style="display:flex; gap:20px; align-items:center; font-size:14px;">
+        <span style="color:var(--muted);">${u.clips} clips</span>
+        <span class="lb-xp">${u.xp.toLocaleString()} XP</span>
+      </div>
+    </div>`
+  ).join('');
+}
+
+renderCampaigns();
+renderLeaderboard();
+</script>
+</body>
+</html>
  
