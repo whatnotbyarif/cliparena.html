@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClipArena — Gaming Clipping Platform</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --bg:#08080d; --panel:#101019; --border:#1f1f2e; --neon:#a855f7; --cyan:#22d3ee; --text:#e6e6f0; --muted:#8a8aa0; }
+  body { background:var(--bg); color:var(--text); min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  header { position:sticky; top:0; z-index:40; backdrop-filter:blur(12px); background:rgba(8,8,13,0.8); border-bottom:1px solid var(--border); }
+  nav { max-width:1100px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .logo { font-weight:800; font-size:18px; }
+  .logo span { color:var(--neon); }
+  nav a.navlink { color:var(--muted); text-decoration:none; font-size:14px; padding:6px 12px; border-radius:8px; }
+  nav a.navlink:hover { color:#fff; background:rgba(255,255,255,0.05); }
+  nav a.navlink.active { color:var(--neon); background:rgba(168,85,247,0.15); }
+  main { max-width:1100px; margin:0 auto; padding:30px 20px 100px; }
+  .page { display:none; }
+  .page.active { display:block; }
+  h1 { font-size:34px; font-weight:800; margin-bottom:6px; }
+  p.sub { color:var(--muted); margin-bottom:24px; }
+  .btn { background:var(--neon); color:#fff; border:none; padding:12px 24px; border-radius:12px; font-weight:600; font-size:15px; cursor:pointer; box-shadow:0 0 40px -10px rgba(168,85,247,0.6); }
+  .btn:hover { filter:brightness(1.15); }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .btn.ghost { background:transparent; border:1px solid var(--border); box-shadow:none; color:var(--text); }
+  .btn.sm { padding:8px 14px; font-size:13px; border-radius:10px; }
+  .hero { text-align:center; padding:60px 0 40px; }
+  .hero h1 { font-size:52px; line-height:1.1; }
+  .grad { background:linear-gradient(90deg,var(--neon),var(--cyan)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .hero p { max-width:620px; margin:16px auto 0; color:var(--muted); font-size:17px; }
+  .hero .actions { margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .badge { display:inline-block; border:1px solid var(--border); background:var(--panel); color:var(--neon); padding:6px 14px; border-radius:999px; font-size:12px; margin-bottom:18px; }
+  .grid { display:grid; gap:16px; }
+  .grid.g3 { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+  .card { background:linear-gradient(180deg,var(--panel),#0c0c14); border:1px solid var(--border); border-radius:18px; padding:22px; }
+  .card:hover { border-color:rgba(168,85,247,0.4); }
+  .card h3 { font-size:16px; margin-bottom:6px; }
+  .card p { color:var(--muted); font-size:14px; }
+  .icon { font-size:24px; margin-bottom:10px; }
+  .section { margin-top:60px; }
+  .upload { border:1px dashed #33334a; border-radius:20px; padding:60px 20px; text-align:center; cursor:pointer; background:var(--panel); display:block; }
+  .upload:hover { border-color:var(--neon); background:#13131f; }
+  .upload .big { font-size:40px; margin-bottom:10px; }
+  .upload strong { display:block; font-size:16px; margin-bottom:6px; }
+  .upload small { color:var(--muted); }
+  .editor { display:grid; grid-template-columns:1.4fr 1fr; gap:24px; margin-top:20px; }
+  @media (max-width:800px) { .editor { grid-template-columns:1fr; } .hero h1 { font-size:34px; } }
+  .preview { background:#000; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; max-height:460px; min-height:260px; }
+  .preview video { max-width:100%; max-height:460px; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px; }
+  .label { font-size:13px; color:var(--muted); margin-bottom:8px; display:block; }
+  input[type=text] { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:10px 12px; font-size:14px; outline:none; }
+  input[type=text]:focus { border-color:var(--neon); }
+  .aspects { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .aspects button { background:transparent; border:1px solid var(--border); color:var(--text); padding:10px; border-radius:10px; font-size:13px; cursor:pointer; }
+  .aspects button.active { border-color:var(--neon); background:rgba(168,85,247,0.12); color:var(--neon); }
+  input[type=range] { width:100%; accent-color:var(--neon); margin-top:6px; }
+  .timeline-row { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:6px; }
+  .progress-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:8px; }
+  .progress-bar > div { height:100%; width:0%; background:linear-gradient(90deg,var(--neon),var(--cyan)); }
+  .clipgrid { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+  .clipcard { background:var(--panel); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+  .clipcard video { width:100%; aspect-ratio:16/9; background:#000; object-fit:contain; display:block; }
+  .clipcard .body { padding:14px; }
+  .clipcard h3 { font-size:15px; margin-bottom:4px; }
+  .clipcard .meta { font-size:12px; color:var(--muted); margin-bottom:10px; }
+  .clipcard .actions { display:flex; gap:8px; }
+  .tag { display:inline-block; background:rgba(168,85,247,0.15); color:var(--neon); padding:2px 8px; border-radius:6px; font-size:11px; }
+  .empty { text-align:center; padding:60px 20px; color:var(--muted); border:1px solid var(--border); border-radius:18px; }
+  .lb-row { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .lb-row:last-child { border-bottom:none; }
+  .lb-rank { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; background:rgba(255,255,255,0.05); color:var(--muted); }
+  .lb-rank.top { background:rgba(168,85,247,0.2); color:var(--neon); }
+  .lb-name { font-weight:600; margin-left:14px; }
+  .lb-xp { color:var(--cyan); font-weight:700; }
+  .campaign { position:relative; }
+  .campaign .game { position:absolute; top:16px; right:16px; background:rgba(34,211,238,0.15); color:var(--cyan); font-size:11px; padding:3px 8px; border-radius:6px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--neon); color:#fff; padding:12px 24px; border-radius:12px; font-weight:600; font-size:14px; opacity:0; transition:all .3s; z-index:100; box-shadow:0 0 40px -10px rgba(168,85,247,0.8); }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">Clip<span>Arena</span></div>
+    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+      <a class="navlink active" data-page="home">Home</a>
+      <a class="navlink" data-page="create">Create</a>
+      <a class="navlink" data-page="clips">My Clips</a>
+      <a class="navlink" data-page="campaigns">Campaigns</a>
+      <a class="navlink" data-page="leaderboard">Leaderboard</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+
+  <section class="page active" id="page-home">
+    <div class="hero">
+      <div class="badge">✨ Trim & export in your browser — no upload</div>
+      <h1>Clip your <span class="grad">best gaming moments</span></h1>
+      <p>Upload gameplay, trim highlights in seconds, export in TikTok, Reels, and YouTube formats. Join campaigns and climb the leaderboard.</p>
+      <div class="actions">
+        <button class="btn" onclick="go('create')">Start Clipping</button>
+        <button class="btn ghost" onclick="go('campaigns')">Browse Campaigns</button>
+      </div>
+    </div>
+
+    <div class="grid g3 section">
+      <div class="card"><div class="icon">✂️</div><h3>Precision Trimming</h3><p>Frame-accurate trims with sliders. Fast, private, no uploads.</p></div>
+      <div class="card"><div class="icon">⚡</div><h3>Instant Export</h3><p>9:16, 1:1, 16:9 — pick a format and export in one click.</p></div>
+      <div class="card"><div class="icon">🏆</div><h3>Campaign Rewards</h3><p>Join clipping campaigns and win XP + cash rewards.</p></div>
+      <div class="card"><div class="icon">📤</div><h3>Upload & Import</h3><p>Drag-drop MP4, WebM, MOV directly into the editor.</p></div>
+      <div class="card"><div class="icon">📱</div><h3>Share Everywhere</h3><p>Optimized for Shorts, Reels, TikTok, and X.</p></div>
+      <div class="card"><div class="icon">🎮</div><h3>Gaming Templates</h3><p>Kill montages, clutches, funny moments.</p></div>
+    </div>
+  </section>
+
+  <section class="page" id="page-create">
+    <h1>Clip Editor</h1>
+    <p class="sub">Trim any video into a clean short clip.</p>
+
+    <div id="uploadZone">
+      <label class="upload">
+        <div class="big">📤</div>
+        <strong>Drop a video or click to upload</strong>
+        <small>MP4, WebM, MOV — trimmed in your browser</small>
+        <input type="file" accept="video/*" id="fileInput" style="display:none" />
+      </label>
+    </div>
+
+    <div class="editor" id="editorZone" style="display:none;">
+      <div>
+        <div class="preview" id="previewBox">
+          <video id="videoPreview" controls playsinline></video>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label class="label">Clip title</label>
+          <input type="text" id="clipTitle" value="Untitled Clip" />
+        </div>
+        <div>
+          <label class="label">Aspect ratio</label>
+          <div class="aspects" id="aspectButtons">
+            <button data-aspect="9:16" class="active">9:16 Reels</button>
+            <button data-aspect="1:1">1:1 Insta</button>
+            <button data-aspect="16:9">16:9 YT</button>
+            <button data-aspect="original">Original</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="timeline-row"><span id="startLabel">Start: 0.00s</span><span id="endLabel">End: 0.00s</span></div>
+          <input type="range" id="startSlider" min="0" max="100" step="0.1" value="0" />
+          <input type="range" id="endSlider" min="0" max="100" step="0.1" value="0" />
+          <div class="timeline-row" style="margin-top:8px;"><span id="durationLabel">Duration: 0.00s</span></div>
+        </div>
+        <button class="btn" id="exportBtn">✂️ Export Clip</button>
+        <div class="progress-bar" id="progressWrap" style="display:none;"><div id="progressFill"></div></div>
+        <p style="font-size:12px; color:var(--muted);">Tip: export plays the video in real-time to record the clip. Keep the tab focused.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-clips">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div><h1>My Clips</h1><p class="sub">All clips you've exported.</p></div>
+      <button class="btn sm" onclick="go('create')">+ New Clip</button>
+    </div>
+    <div id="clipsContainer"></div>
+  </section>
+
+  <section class="page" id="page-campaigns">
+    <h1>Campaigns</h1>
+    <p class="sub">Join a campaign, submit your best clip, win rewards.</p>
+    <div class="grid g3" id="campaignGrid"></div>
+  </section>
+
+  <section class="page" id="page-leaderboard">
+    <h1>Leaderboard</h1>
+    <p class="sub">Top clippers this week. Climb the ranks by submitting clips.</p>
+    <div class="card" style="padding:0;" id="leaderboardBox"></div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function go(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.navlink').forEach(l => l.classList.toggle('active', l.dataset.page === page));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (page === 'clips') renderClips();
+  if (page === 'leaderboard') renderLeaderboard();
+  if (page === 'campaigns') renderCampaigns();
+}
+document.querySelectorAll('.navlink').forEach(l => l.addEventListener('click', () => go(l.dataset.page)));
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+const DB_NAME = 'cliparena';
+const STORE = 'clips';
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(STORE)) r.result.createObjectStore(STORE); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function putBlob(id, blob) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(blob, id);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+async function getBlob(id) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const r = db.transaction(STORE, 'readonly').objectStore(STORE).get(id);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function delBlob(id) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+
+const LS_KEY = 'cliparena.clips.meta';
+function getClips() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; } }
+function saveClip(c) { const all = getClips().filter(x => x.id !== c.id); all.unshift(c); localStorage.setItem(LS_KEY, JSON.stringify(all)); }
+function removeClipMeta(id) { localStorage.setItem(LS_KEY, JSON.stringify(getClips().filter(c => c.id !== id))); }
+
+let currentFile = null;
+let currentAspect = '9:16';
+let videoEl = null;
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadVideo(e.target.files[0]);
+});
+
+document.querySelectorAll('#aspectButtons button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#aspectButtons button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentAspect = b.dataset.aspect;
+  });
+});
+
+function loadVideo(file) {
+  currentFile = file;
+  const url = URL.createObjectURL(file);
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('editorZone').style.display = 'grid';
+  const v = document.getElementById('videoPreview');
+  v.src = url;
+  videoEl = v;
+  v.onloadedmetadata = () => {
+    const dur = v.duration;
+    const start = document.getElementById('startSlider');
+    const end = document.getElementById('endSlider');
+    start.max = dur; end.max = dur;
+    start.value = 0;
+    end.value = Math.min(15, dur);
+    updateLabels();
+    v.currentTime = 0;
+  };
+}
+
+function updateLabels() {
+  const s = parseFloat(document.getElementById('startSlider').value);
+  const e = parseFloat(document.getElementById('endSlider').value);
+  document.getElementById('startLabel').textContent = `Start: ${s.toFixed(2)}s`;
+  document.getElementById('endLabel').textContent = `End: ${e.toFixed(2)}s`;
+  document.getElementById('durationLabel').textContent = `Duration: ${(e - s).toFixed(2)}s`;
+}
+
+document.getElementById('startSlider').addEventListener('input', () => {
+  const s = parseFloat(document.getElementById('startSlider').value);
+  const e = parseFloat(document.getElementById('endSlider').value);
+  if (s >= e) document.getElementById('startSlider').value = Math.max(0, e - 0.5);
+  if (videoEl) videoEl.currentTime = parseFloat(document.getElementById('startSlider').value);
+  updateLabels();
+});
+document.getElementById('endSlider').addEventListener('input', () => {
+  const s = parseFloat(document.getElementById('startSlider').value);
+  const e = parseFloat(document.getElementById('endSlider').value);
+  if (e <= s) document.getElementById('endSlider').value = s + 0.5;
+  if (videoEl) videoEl.currentTime = parseFloat(document.getElementById('endSlider').value);
+  updateLabels();
+});
+
+async function trimVideo(file, start, end, aspect, onProgress) {
+  const url = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.src = url;
+  video.playsInline = true;
+  await new Promise((res, rej) => {
+    video.onloadedmetadata = () => res();
+    video.onerror = () => rej(new Error('Video load failed'));
+  });
+
+  let ratio = aspect === 'original' ? video.videoWidth / video.videoHeight : Number(aspect.split(':')[0]) / Number(aspect.split(':')[1]);
+  let w = video.videoWidth, h = video.videoHeight;
+  if (w / h > ratio) w = h * ratio; else h = w / ratio;
+  w = Math.max(2, Math.round(w / 2) * 2);
+  h = Math.max(2, Math.round(h / 2) * 2);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const canvasStream = canvas.captureStream(30);
+
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AC();
+  await audioCtx.resume();
+  const src = audioCtx.createMediaElementSource(video);
+  const dest = audioCtx.createMediaStreamDestination();
+  src.connect(dest);
+  dest.stream.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+
+  let mime = 'video/webm;codecs=vp9,opus';
+  if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+  if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
+  const recorder = new MediaRecorder(canvasStream, { mimeType: mime });
+  const chunks = [];
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+
+  const seeked = new Promise(r => (video.onseeked = () => r()));
+  video.currentTime = Math.max(0, Math.min(start, video.duration));
+  await seeked;
+
+  recorder.start(100);
+  await video.play();
+  const duration = end - start;
+
+  return new Promise((resolve) => {
+    const loop = () => {
+      const t = video.currentTime;
+      if (duration > 0) onProgress && onProgress(Math.min(1, (t - start) / duration));
+      if (t >= end - 0.02 || video.ended) {
+        video.pause(); recorder.stop(); audioCtx.close(); URL.revokeObjectURL(url); return;
+      }
+      const sx = (video.videoWidth - w) / 2;
+      const sy = (video.videoHeight - h) / 2;
+      ctx.drawImage(video, sx, sy, w, h, 0, 0, w, h);
+      requestAnimationFrame(loop);
+    };
+    recorder.onstop = () => resolve(new Blob(chunks, { type: mime }));
+    loop();
+  });
+}
+
+document.getElementById('exportBtn').addEventListener('click', async () => {
+  if (!currentFile) return;
+  const btn = document.getElementById('exportBtn');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const start = parseFloat(document.getElementById('startSlider').value);
+  const end = parseFloat(document.getElementById('endSlider').value);
+  const title = document.getElementById('clipTitle').value || 'Clip';
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Exporting...';
+  progressWrap.style.display = 'block';
+
+  try {
+    const blob = await trimVideo(currentFile, start, end, currentAspect, p => { progressFill.style.width = (p * 100).toFixed(0) + '%'; });
+    const id = 'clip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    await putBlob(id, blob);
+    saveClip({ id, title, aspect: currentAspect, start, end, duration: end - start, size: blob.size, createdAt: Date.now() });
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    a.download = title.replace(/\s+/g, '-').toLowerCase() + '.' + ext;
+    a.click();
+
+ 
