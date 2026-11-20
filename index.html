@@ -12,7 +12,7 @@
   nav { max-width:1100px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .logo { font-weight:800; font-size:18px; }
   .logo span { color:var(--neon); }
-  nav a.navlink { color:var(--muted); text-decoration:none; font-size:14px; padding:6px 12px; border-radius:8px; }
+  nav a.navlink { color:var(--muted); text-decoration:none; font-size:14px; padding:6px 12px; border-radius:8px; cursor:pointer; }
   nav a.navlink:hover { color:#fff; background:rgba(255,255,255,0.05); }
   nav a.navlink.active { color:var(--neon); background:rgba(168,85,247,0.15); }
   main { max-width:1100px; margin:0 auto; padding:30px 20px 100px; }
@@ -96,7 +96,6 @@
 </header>
 
 <main>
-
   <section class="page active" id="page-home">
     <div class="hero">
       <div class="badge">✨ Trim & export in your browser — no upload</div>
@@ -107,7 +106,6 @@
         <button class="btn ghost" onclick="go('campaigns')">Browse Campaigns</button>
       </div>
     </div>
-
     <div class="grid g3 section">
       <div class="card"><div class="icon">✂️</div><h3>Precision Trimming</h3><p>Frame-accurate trims with sliders. Fast, private, no uploads.</p></div>
       <div class="card"><div class="icon">⚡</div><h3>Instant Export</h3><p>9:16, 1:1, 16:9 — pick a format and export in one click.</p></div>
@@ -121,7 +119,6 @@
   <section class="page" id="page-create">
     <h1>Clip Editor</h1>
     <p class="sub">Trim any video into a clean short clip.</p>
-
     <div id="uploadZone">
       <label class="upload">
         <div class="big">📤</div>
@@ -130,7 +127,6 @@
         <input type="file" accept="video/*" id="fileInput" style="display:none" />
       </label>
     </div>
-
     <div class="editor" id="editorZone" style="display:none;">
       <div>
         <div class="preview" id="previewBox">
@@ -159,7 +155,6 @@
         </div>
         <button class="btn" id="exportBtn">✂️ Export Clip</button>
         <div class="progress-bar" id="progressWrap" style="display:none;"><div id="progressFill"></div></div>
-        <p style="font-size:12px; color:var(--muted);">Tip: export plays the video in real-time to record the clip. Keep the tab focused.</p>
       </div>
     </div>
   </section>
@@ -183,12 +178,10 @@
     <p class="sub">Top clippers this week. Climb the ranks by submitting clips.</p>
     <div class="card" style="padding:0;" id="leaderboardBox"></div>
   </section>
-
 </main>
 
 <div class="toast" id="toast"></div>
-
-<script>
+<!-- PART 1 ENDS HERE. AB PART 2 COPY KARNA HAI --><script>
 function go(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
@@ -300,6 +293,7 @@ document.getElementById('startSlider').addEventListener('input', () => {
   if (videoEl) videoEl.currentTime = parseFloat(document.getElementById('startSlider').value);
   updateLabels();
 });
+
 document.getElementById('endSlider').addEventListener('input', () => {
   const s = parseFloat(document.getElementById('startSlider').value);
   const e = parseFloat(document.getElementById('endSlider').value);
@@ -317,18 +311,15 @@ async function trimVideo(file, start, end, aspect, onProgress) {
     video.onloadedmetadata = () => res();
     video.onerror = () => rej(new Error('Video load failed'));
   });
-
   let ratio = aspect === 'original' ? video.videoWidth / video.videoHeight : Number(aspect.split(':')[0]) / Number(aspect.split(':')[1]);
   let w = video.videoWidth, h = video.videoHeight;
   if (w / h > ratio) w = h * ratio; else h = w / ratio;
   w = Math.max(2, Math.round(w / 2) * 2);
   h = Math.max(2, Math.round(h / 2) * 2);
-
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
   const canvasStream = canvas.captureStream(30);
-
   const AC = window.AudioContext || window.webkitAudioContext;
   const audioCtx = new AC();
   await audioCtx.resume();
@@ -336,22 +327,18 @@ async function trimVideo(file, start, end, aspect, onProgress) {
   const dest = audioCtx.createMediaStreamDestination();
   src.connect(dest);
   dest.stream.getAudioTracks().forEach(t => canvasStream.addTrack(t));
-
   let mime = 'video/webm;codecs=vp9,opus';
   if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
   if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
   const recorder = new MediaRecorder(canvasStream, { mimeType: mime });
   const chunks = [];
   recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
-
   const seeked = new Promise(r => (video.onseeked = () => r()));
   video.currentTime = Math.max(0, Math.min(start, video.duration));
   await seeked;
-
   recorder.start(100);
   await video.play();
   const duration = end - start;
-
   return new Promise((resolve) => {
     const loop = () => {
       const t = video.currentTime;
@@ -377,22 +364,34 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   const start = parseFloat(document.getElementById('startSlider').value);
   const end = parseFloat(document.getElementById('endSlider').value);
   const title = document.getElementById('clipTitle').value || 'Clip';
-
   btn.disabled = true;
   btn.textContent = '⏳ Exporting...';
   progressWrap.style.display = 'block';
-
   try {
     const blob = await trimVideo(currentFile, start, end, currentAspect, p => { progressFill.style.width = (p * 100).toFixed(0) + '%'; });
     const id = 'clip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     await putBlob(id, blob);
     saveClip({ id, title, aspect: currentAspect, start, end, duration: end - start, size: blob.size, createdAt: Date.now() });
-
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
     a.download = title.replace(/\s+/g, '-').toLowerCase() + '.' + ext;
     a.click();
+    toast('✅ Clip exported and saved!');
+    progressFill.style.width = '0%';
+    progressWrap.style.display = 'none';
+    go('clips');
+  } catch (err) {
+    console.error(err);
+    toast('❌ Export failed.');
+    progressFill.style.width = '0%';
+    progressWrap.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✂️ Export Clip';
+  }
+});
+
 async function renderClips() {
   const container = document.getElementById('clipsContainer');
   const metas = getClips();
@@ -410,7 +409,6 @@ async function renderClips() {
       </div>
     </div>`
   ).join('') + '</div>';
-
   for (const m of metas) {
     const blob = await getBlob(m.id);
     if (blob) {
@@ -496,4 +494,3 @@ renderLeaderboard();
 </script>
 </body>
 </html>
- 
